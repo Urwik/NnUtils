@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+
 def plotCurves(path):
 
     ROOT_DIR = os.path.abspath(path)
@@ -14,7 +15,6 @@ def plotCurves(path):
     recall = np.load(ROOT_DIR + f'/recall.npy').flatten()
     conf_matrix = np.load(ROOT_DIR + f'/conf_matrix.npy').flatten()
     threshold = np.load(ROOT_DIR + f'/threshold.npy').flatten()
-
 
     EPOCHS = train_loss.shape[0]
     train_loss = train_loss.flatten()
