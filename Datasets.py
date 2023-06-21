@@ -179,7 +179,7 @@ class MinkDataset(Dataset):
         self.voxel_size = _voxel_size
         self.normalize = _normalize
         self.binary = _binary
-        self.cords = []
+        self.coords = []
         self.features = []
         self.labels = []
 
@@ -199,33 +199,32 @@ class MinkDataset(Dataset):
         # nm.memmap to np.ndarray
         data = np.array(list(map(list, data)))
 
-        self.cords = data[:, self.cord_idx]
-        self.features = data[:, self.feat_idx]
-        self.labels = data[:, self.label_idx]
+        self.coords = data[:, self.cord_idx].copy()
+        self.features = data[:, self.feat_idx].copy()
+        self.labels = data[:, self.label_idx].copy()
 
         if self.binary:
             self.labels[self.labels > 0] = 1
 
-        if self.normalize:
-            # XYZ suposed to be 3 first features
-            xyz = self.cords
-            centroid = np.mean(xyz, axis=0)
-            xyz -= centroid
-            furthest_distance = np.max(np.sqrt(np.sum(abs(xyz) ** 2, axis=-1)))
-            xyz /= furthest_distance
-            # self.cords = xyz
-            self.features[:, [0, 1, 2]] = xyz
+        if self.feat_idx[:3] == [0, 1, 2]:
+            if self.normalize:
+                # XYZ suposed to be 3 first features
+                xyz = self.coords.copy()
+                centroid = np.mean(xyz, axis=0)
+                xyz -= centroid
+                furthest_distance = np.max(np.sqrt(np.sum(abs(xyz) ** 2, axis=-1)))
+                xyz /= furthest_distance
+                self.features[:, [0, 1, 2]] = xyz
 
         if self.add_range:
-            xyz = self.cords
-            D = np.sqrt(np.sum(abs(xyz) ** 2, axis=-1))
-            D = D[:, None]
-            self.features = np.hstack((self.features, D))
+            range = np.sqrt(np.sum(abs(self.coords) ** 2, axis=-1))
+            range = range[:, None]
+            self.features = np.hstack((self.features, range))
 
         if self.mode == 'test_no_labels':
-            return self.cords.astype(np.float32) / self.voxel_size, self.features.astype(np.float32)
+            return self.coords.astype(np.float32) / self.voxel_size, self.features.astype(np.float32)
         else:
-            return self.cords.astype(np.float32) / self.voxel_size, self.features.astype(np.float32), self.labels.astype(np.int32)
+            return self.coords.astype(np.float32) / self.voxel_size, self.features.astype(np.float32), self.labels.astype(np.int32)
 
 
 class minkDataset(Dataset):
@@ -269,8 +268,9 @@ class minkDataset(Dataset):
         # nm.memmap to np.ndarray
         data = np.array(list(map(list, data)))
 
-        features = data[:, self.features]
-        self.coords = features[:, [0,1,2]]
+        features = data[:, self.features].copy()
+        # self.coords = features[:, [0,1,2]]
+        self.coords = data[:, [0,1,2]].copy()
 
         if self.normalize:
             # XYZ suposed to be 3 first features
@@ -334,7 +334,7 @@ class vis_minkDataset(Dataset):
 
 
     def __getitem__(self, index):
-        path_to_file = os.path.abspath(self.dataset[index]) #type: os.path
+        path_to_file = os.path.abspath(self.dataset[index])
         ply = PlyData.read(path_to_file)
         data = ply["vertex"].data
         # nm.memmap to np.ndarray
@@ -430,7 +430,7 @@ class vis_Test_Dataset(Dataset):
         return len(self.dataset)
 
     def __getitem__(self, index):
-        path_to_file = os.path.abspath(self.dataset[index]) #type: os.path
+        path_to_file = os.path.abspath(self.dataset[index])
         # path_to_file = os.path.join(self.root_dir, file)
         ply = PlyData.read(path_to_file)
         data = ply["vertex"].data
@@ -482,26 +482,69 @@ class RandDataset(Dataset):
 
 if __name__ == '__main__':
 
-    ROOT_DIR = os.path.abspath('/home/arvc/Fran/data/datasets/ARVCTRUSS/train/ply_xyzlabelnormal')
+    ROOT_DIR = os.path.abspath('/media/arvc/data/datasets/ARVCTRUSS/train/ply_xyzlabelnormal')
 
-    dataset = MinkDataset(_mode='train',
-                          _root_dir=ROOT_DIR,
-                          _cord_idx=[0, 1, 2],
-                          _feat_idx=[0, 1, 2],
-                          _label_idx=[3],
-                          _normalize=True,
-                          _binary=True,
-                          _add_range=False,
-                          _voxel_size=0.1)
 
-    train_loader = torch.utils.data.DataLoader(dataset=dataset,
+    NORMALIZANDO = False
+    BINARY = True
+    ADD_RANGE = True
+
+
+    dataset_v1 = minkDataset(mode_='train',
+                             root_dir=ROOT_DIR,
+                             add_range_=ADD_RANGE,
+                             normalize=NORMALIZANDO,
+                             binary=BINARY,
+                             features=[0, 1, 2],
+                             labels=[3],
+                             voxel_size_=0.1)
+
+    dataset_v2 = MinkDataset(_mode='train',
+                            _root_dir=ROOT_DIR,
+                            _cord_idx=[0, 1, 2],
+                            _feat_idx=[0, 1, 2],
+                            _label_idx=[3],
+                            _normalize=NORMALIZANDO,
+                            _binary=BINARY,
+                            _add_range=ADD_RANGE,
+                            _voxel_size=0.1)
+
+
+    loader_v1 = torch.utils.data.DataLoader(dataset=dataset_v1,
                                                batch_size=1,
-                                               shuffle=True,
+                                               shuffle=False,
                                                num_workers=1,
                                                pin_memory=True,
                                                drop_last=True)
+    
+    loader_v2 = torch.utils.data.DataLoader(dataset=dataset_v2,
+                                               batch_size=1,
+                                               shuffle=False,
+                                               num_workers=1,
+                                               pin_memory=True,
+                                               drop_last=True)
+    
+    for i in range(5):
+        data_v1 = loader_v1.dataset[i]
+        data_v2 = loader_v2.dataset[i]
 
-    for i, (coord, feat, labels) in enumerate(train_loader):
-        print(labels)
+        # PATHS
+        # print(dataset_v1.dataset[i])
+        # print(dataset_v2.dataset[i])
+
+        # COORDS
+        # print(data_v1[0][0])
+        # print(data_v2[0][0])
+        
+        # FEATURES
+        print(data_v1[1][0])
+        print(data_v2[1][0])
+
+        # LABELS
+        # print(data_v1[2][0])
+        # print(data_v2[2][0])
+
+        print('-'*10)
+
 
 
