@@ -1,0 +1,69 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+
+def plotCurves(path):
+
+    ROOT_DIR = os.path.abspath(path)
+
+    # LOAD RESULTS
+    train_loss = np.load(ROOT_DIR + f'/train_loss.npy')
+    valid_loss = np.load(ROOT_DIR + f'/valid_loss.npy').flatten()
+    f1_score = np.load(ROOT_DIR + f'/f1_score.npy').flatten()
+    precision = np.load(ROOT_DIR + f'/precision.npy').flatten()
+    recall = np.load(ROOT_DIR + f'/recall.npy').flatten()
+    conf_matrix = np.load(ROOT_DIR + f'/conf_matrix.npy').flatten()
+    threshold = np.load(ROOT_DIR + f'/threshold.npy').flatten()
+
+
+    EPOCHS = train_loss.shape[0]
+    train_loss = train_loss.flatten()
+
+    # PLOTTING FIGURES
+    plt.figure()
+    plt.subplot(311)
+    plt.title('Training-Validation Loss')
+    plt.plot(np.linspace(0, EPOCHS, train_loss.size), train_loss, 'r', label='train')
+    plt.plot(np.linspace(0, EPOCHS, valid_loss.size), valid_loss, 'g', label='validation')
+    plt.legend()
+    plt.yticks(np.arange(0, 1, 0.1))
+    plt.ylim([0, 1])
+
+    plt.subplot(312)
+    plt.title('Precision-Recall')
+    plt.plot(np.linspace(0, EPOCHS, precision.size), precision, 'b', label='precision')
+    plt.plot(np.linspace(0, EPOCHS, recall.size), recall, 'y', label='recall')
+    plt.legend()
+    plt.yticks(np.arange(0, 1, 0.1))
+    plt.ylim([0, 1])
+
+    plt.subplot(313)
+    plt.title('Threshold')
+    plt.plot(np.linspace(0, EPOCHS, threshold.size), threshold, 'g', label='threshold')
+
+    plt.show()
+
+
+def plotPRCurve(model_path_):
+
+    precision = np.load(model_path_ + f'/pr_precision.npy')
+    recall = np.load(model_path_ + f'/pr_recall.npy')
+    threshold = np.load(model_path_ + f'/pr_threshold.npy')
+
+    plt.figure()
+    plt.subplot(211)
+    plt.title('Precision-Recall Curve')
+    plt.plot(recall, precision, color='red')
+    plt.plot(threshold, color='green')
+    plt.xticks(np.arange(0, 1, 0.1))
+    plt.xlim([0, 1])
+
+    plt.yticks(np.arange(0, 1, 0.1))
+    plt.ylim([0, 1])
+
+    plt.show()
+
+
+if __name__ == '__main__':
+    pass
+
