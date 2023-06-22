@@ -2,9 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-def plotCurves(path):
+def plotModelCurves(_model_path = ''):
 
-    ROOT_DIR = os.path.abspath(path)
+    ROOT_DIR = os.path.abspath(_model_path)
 
     # LOAD RESULTS
     train_loss = np.load(ROOT_DIR + f'/train_loss.npy')
