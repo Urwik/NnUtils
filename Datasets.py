@@ -1,10 +1,12 @@
 import os
 import numpy as np
+import pandas as pd
+
 import torch
 from torch.utils.data import Dataset
-from plyfile import PlyData, PlyElement
-import pandas as pd
-import open3d as o3d
+
+from plyfile import PlyData
+
 from tqdm import tqdm
 
 class PLYDatasetPlaneCount(Dataset):
@@ -72,7 +74,7 @@ class PLYDataset_V2(Dataset):
         super().__init__()
         self.mode = _mode
         self.root_dir = _root_dir
-        self.cord_idx = _cord_idx if _cord_idx is not None else [0, 1, 2]
+        self.coord_idx = _coord_idx if _coord_idx is not None else [0, 1, 2]
         self.feat_idx = _feat_idx if _feat_idx is not None else [0, 1, 2]
         self.label_idx = _label_idx if _label_idx is not None else [-1]
         self.normalize = _normalize
@@ -136,7 +138,7 @@ class PLYDataset_V2(Dataset):
         # nm.memmap to np.ndarray
         data = np.array(list(map(list, data)))
 
-        self.coords = data[:, self.cord_idx].copy()
+        self.coords = data[:, self.coord_idx].copy()
         self.features = data[:, self.feat_idx].copy()
         self.labels = data[:, self.label_idx].copy()
 
@@ -265,7 +267,7 @@ class MinkDataset(Dataset):
     def __init__(self,
                  _mode='train',
                  _root_dir='my_dataset_dir',
-                 _cord_idx=None,
+                 _coord_idx=None,
                  _feat_idx=None,
                  _label_idx=None,
                  _normalize=False,
@@ -276,7 +278,7 @@ class MinkDataset(Dataset):
         super().__init__()
         self.mode = _mode
         self.root_dir = _root_dir
-        self.cord_idx = _cord_idx if _cord_idx is not None else [0, 1, 2]
+        self.coord_idx = _coord_idx if _coord_idx is not None else [0, 1, 2]
         self.feat_idx = _feat_idx if _feat_idx is not None else [0, 1, 2]
         self.label_idx = _label_idx if _label_idx is not None else [-1]
         self.add_range = _add_range
@@ -303,7 +305,7 @@ class MinkDataset(Dataset):
         # nm.memmap to np.ndarray
         data = np.array(list(map(list, data)))
 
-        self.coords = data[:, self.cord_idx].copy()
+        self.coords = data[:, self.coord_idx].copy()
         self.features = data[:, self.feat_idx].copy()
         self.labels = data[:, self.label_idx].copy()
 
@@ -589,29 +591,32 @@ if __name__ == '__main__':
     ROOT_DIR = os.path.abspath('/media/arvc/data/datasets/ARVCTRUSS/train/ply_xyzlabelnormal')
 
 
-    NORMALIZANDO = False
+    NORMALIZANDO = True
     BINARY = True
-    ADD_RANGE = True
+    ADD_RANGE = False
+    COORDENADAS = [0, 1, 2]
+    FEATURES = [0, 1, 2]
+    LABELS = [3]
 
 
-    dataset_v1 = minkDataset(mode_='train',
-                             root_dir=ROOT_DIR,
-                             add_range_=ADD_RANGE,
-                             normalize=NORMALIZANDO,
-                             binary=BINARY,
-                             features=[0, 1, 2],
-                             labels=[3],
-                             voxel_size_=0.1)
+    dataset_v1 = PLYDataset(root_dir=ROOT_DIR,
+                            features=FEATURES,
+                            labels=LABELS,
+                            normalize=NORMALIZANDO,
+                            binary=BINARY,
+                            add_range_=ADD_RANGE,
+                            compute_weights=False)
 
-    dataset_v2 = MinkDataset(_mode='train',
+    dataset_v2 = PLYDataset_V2(_mode='train',
                             _root_dir=ROOT_DIR,
-                            _cord_idx=[0, 1, 2],
-                            _feat_idx=[0, 1, 2],
-                            _label_idx=[3],
+                            _coord_idx=COORDENADAS,
+                            _feat_idx=FEATURES,
+                            _label_idx=LABELS,
                             _normalize=NORMALIZANDO,
                             _binary=BINARY,
                             _add_range=ADD_RANGE,
-                            _voxel_size=0.1)
+                            _compute_weights=False)
+                            
 
 
     loader_v1 = torch.utils.data.DataLoader(dataset=dataset_v1,
@@ -637,12 +642,12 @@ if __name__ == '__main__':
         # print(dataset_v2.dataset[i])
 
         # COORDS
-        # print(data_v1[0][0])
-        # print(data_v2[0][0])
+        print(data_v1[0][0])
+        print(data_v2[1][0])
         
         # FEATURES
-        print(data_v1[1][0])
-        print(data_v2[1][0])
+        # print(data_v1[1][0])
+        # print(data_v2[1][0])
 
         # LABELS
         # print(data_v1[2][0])
