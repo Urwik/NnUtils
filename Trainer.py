@@ -12,6 +12,7 @@ from datetime import datetime
 import Config
 
 class Trainer():
+
     def __init__(self, config_obj_ ):
         self.config = config_obj_ 
         self.model = None
@@ -22,6 +23,11 @@ class Trainer():
         self.data = None
         self.print_info = False
         self.print_every_x_batches = 10
+
+
+
+    def apply_config():
+        self.model = self.config.model
 
     def train(self):
         current_clouds = 0

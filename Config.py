@@ -3,66 +3,71 @@ import os
 
 class train:
     def __init__(self):
-        self.train_dir = None
-        self.valid_dir = None
-        self.use_valid_data = None
-        self.output_dir = None
-        self.train_split = None
-        self.features = None
-        self.add_range = None
-        self.labels = None
-        self.normalize = None
-        self.binary = None
-        self.device = None
-        self.batch_size = None
-        self.epochs = None
-        self.init_lr = None
-        self.output_classes = None
-        self.epoch_timeout = None
-        self.threshold_method = None
-        self.termination_criteria = None
+        self.train_dir: str
+        self.valid_dir: str
+        self.use_valid_data: bool
+        self.output_dir: str 
+        self.train_split: float
+        self.feat_idx: list
+        self.coord_idx: list
+        self.add_range: bool
+        self.label_idx: list
+        self.normalize: bool
+        self.binary: bool
+        self.device: str
+        self.batch_size: int
+        self.epochs: int
+        self.init_lr: float
+        self.output_classes: int
+        self.epoch_timeout: int
+        self.threshold_method: str
+        self.termination_criteria: str
+        self.compute_weights: bool
 
 class test:
     def __init__(self):
-        self.test_dir  = None
-        self.device = None
-        self.batch_size = 1
-        self.save_pred_clouds = None
+        self.test_dir: str
+        self.device: str
+        self.batch_size: int
+        self.save_pred_clouds: bool
         
 
 
 
 class Config():
 
-    def __init__(self, root_dir = ''):
-        with open(root_dir) as file:
+    def __init__(self, _root_dir = ''):
+        with open(_root_dir) as file:
             self.config = yaml.safe_load(file)
 
+        self.config_path = _root_dir
         # ---------------------------------------------------------------------#
         # TRAIN CONFIGURATION
         self.train = train()
-        self.train.train_dir = self.config["train"]["TRAIN_DIR"]
-        self.train.valid_dir = self.config["train"]["VALID_DIR"]
-        self.train.use_valid_data = self.config["train"]["USE_VALID_DATA"]
-        self.train.output_dir = self.config["train"]["OUTPUT_DIR"]
-        self.train.train_split = self.config["train"]["TRAIN_SPLIT"]
-        self.train.features = self.config["train"]["FEATURES"]
-        self.train.labels = self.config["train"]["LABELS"]
-        self.train.normalize = self.config["train"]["NORMALIZE"]
-        self.train.binary = self.config["train"]["BINARY"]
-        self.train.device = self.config["train"]["DEVICE"]
-        self.train.batch_size = self.config["train"]["BATCH_SIZE"]
-        self.train.epochs = self.config["train"]["EPOCHS"]
-        self.train.init_lr = self.config["train"]["LR"]
-        self.train.output_classes = self.config["train"]["OUTPUT_CLASSES"]
-        self.train.threshold_method = self.config["train"]["THRESHOLD_METHOD"]
-        self.train.termination_criteria = self.config["train"]["TERMINATION_CRITERIA"]
-        self.train.epoch_timeout = self.config["train"]["EPOCH_TIMEOUT"]
+        self.train.train_dir = self.config["train"]["TRAIN_DIR"] #type: str
+        self.train.valid_dir = self.config["train"]["VALID_DIR"] #type: str
+        self.train.use_valid_data = self.config["train"]["USE_VALID_DATA"] #type: bool
+        self.train.output_dir = self.config["train"]["OUTPUT_DIR"] #type: str
+        self.train.train_split = self.config["train"]["TRAIN_SPLIT"] #type: float
+        self.train.coord_idx = self.config["train"]["COORDS"] #type: list
+        self.train.feat_idx = self.config["train"]["FEATURES"] #type: list
+        self.train.label_idx = self.config["train"]["LABELS"] #type: list
+        self.train.normalize = self.config["train"]["NORMALIZE"] #type: bool
+        self.train.binary = self.config["train"]["BINARY"] #type: bool
+        self.train.device = self.config["train"]["DEVICE"] #type: str
+        self.train.batch_size = self.config["train"]["BATCH_SIZE"] #type: int
+        self.train.epochs = self.config["train"]["EPOCHS"] #type: int
+        self.train.init_lr = self.config["train"]["LR"] #type: float
+        self.train.output_classes = self.config["train"]["OUTPUT_CLASSES"] #type: int
+        self.train.threshold_method = self.config["train"]["THRESHOLD_METHOD"] #type: str
+        self.train.termination_criteria = self.config["train"]["TERMINATION_CRITERIA"] #type: str
+        self.train.epoch_timeout = self.config["train"]["EPOCH_TIMEOUT"] #type: int
+        self.train.compute_weights = self.config["train"]["COMPUTE_WEIGHTS"] #type: bool
         
         # ---------------------------------------------------------------------#
         # TEST CONFIGURATION
         self.test = test()
-        self.test.test_dir = self.config["test"]["TEST_DIR"]
-        self.test.device = self.config["test"]["DEVICE"]
-        self.test.batch_size = self.config["test"]["BATCH_SIZE"]
-        self.test.save_pred_clouds = self.config["test"]["SAVE_PRED_CLOUDS"]
+        self.test.test_dir = self.config["test"]["TEST_DIR"] #type: str
+        self.test.device = self.config["test"]["DEVICE"] #type: str
+        self.test.batch_size = self.config["test"]["BATCH_SIZE"] #type: int
+        self.test.save_pred_clouds = self.config["test"]["SAVE_PRED_CLOUDS"] #type: bool

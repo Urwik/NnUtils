@@ -59,7 +59,7 @@ class PLYDatasetPlaneCount(Dataset):
         return features, label, filename
 
 
-class PLYDataset_V2(Dataset):
+class PLYDataset(Dataset):
     def __init__(self,
                  _mode = 'train', 
                  _root_dir = 'my_dataset_dir',
@@ -163,104 +163,6 @@ class PLYDataset_V2(Dataset):
 
         return self.coords, self.features, self.labels, self.dataset[index].split('.')[0]
 
-class PLYDataset(Dataset):
-    def __init__(self, root_dir = 'my_dataset_dir', features=None, labels=None, normalize=False, binary = False, add_range_=False,compute_weights=False):
-        super().__init__()
-        self.root_dir = root_dir
-        self.add_range = add_range_
-
-        if features is None:
-            self.features = [0, 1, 2]
-        else:
-            self.features = features
-
-        if labels is None:
-            self.labels = [-1]
-        else:
-            self.labels = labels
-
-        self.normalize = normalize
-        self.binary = binary
-
-        self.dataset = []
-        for file in os.listdir(self.root_dir):
-            if file.endswith(".ply"):
-                self.dataset.append(file)
-
-        if compute_weights:
-            self.weights = []
-            # COMPUTE WEIGHTS FOR EACH LABEL IN THE WHOLE DATASET
-            print('-'*50)
-            print("COMPUTING LABEL WEIGHTS")
-            for file in tqdm(self.dataset):
-                # READ THE FILE
-                path_to_file = os.path.join(self.root_dir, file)
-                ply = PlyData.read(path_to_file)
-                data = ply["vertex"].data
-                data = np.array(list(map(list, data)))
-
-                # CONVERT TO BINARY LABELS
-                labels = data[:, self.labels]
-                if self.binary:
-                    labels[labels > 0] = 1
-
-                labels = np.sort(labels, axis=None)
-                k_lbl, weights = np.unique(labels, return_counts=True)
-                # SI SOLO EXISTE UNA CLASE EN LA NUBE (SOLO SUELO)
-                if k_lbl.size < 2:
-                    if k_lbl[0] == 0:
-                        weights = np.array([1, 0])
-                    else:
-                        weights = np.array([0, 1])
-                else:
-                    weights = weights / len(labels)
-
-                if len(self.weights) == 0:
-                    self.weights = weights
-                else:
-                    self.weights = np.vstack((self.weights, weights))
-
-            self.weights = np.mean(self.weights, axis=0).astype(np.float32)
-
-    def __len__(self):
-        return len(self.dataset)
-
-    def __getitem__(self, index):
-        file = self.dataset[index]
-        path_to_file = os.path.join(self.root_dir, file)
-        ply = PlyData.read(path_to_file)
-        data = ply["vertex"].data
-        # nm.memmap to np.ndarray
-        data = np.array(list(map(list, data)))
-
-        features = data[:, self.features]
-        labels = data[:, self.labels]
-
-        if self.normalize:
-            # XYZ suposed to be 3 first features
-            xyz = features[:, [0,1,2]]
-            centroid = np.mean(xyz, axis=0)
-            xyz -= centroid
-            furthest_distance = np.max(np.sqrt(np.sum(abs(xyz) ** 2, axis=-1)))
-            xyz /= furthest_distance
-            features[:, [0,1,2]] = xyz
-
-        if self.add_range:
-            xyz = features[:, [0,1,2]]
-            D = np.sqrt(np.sum(abs(xyz) ** 2, axis=-1))
-            D = D[:, None]
-            features = np.hstack((features, D))
-
-        if self.binary:
-            labels[labels > 0] = 1
-
-        # COMPUTE WEIGHTS FOR EACH LABEL
-        # labels = np.sort(labels, axis=None)
-        # _, weights = np.unique(labels, return_counts=True)
-        # weights = weights/len(labels)
-
-        return features, labels, file.split('.')[0]
-
 
 class MinkDataset(Dataset):
 
@@ -333,6 +235,22 @@ class MinkDataset(Dataset):
             return self.coords.astype(np.float32) / self.voxel_size, self.features.astype(np.float32), self.labels.astype(np.int32)
 
 
+class RandDataset(Dataset):
+  def __init__(self, n_clouds=50, n_points=3000, n_features=3):
+    super(RandDataset, self).__init__()
+    # do stuff here?
+    self.values = np.random.rand(n_clouds, n_points, n_features)
+    self.labels = np.random.rand(n_clouds, n_points)
+
+  def __len__(self):
+    return len(self.values)  # number of samples in the dataset
+
+  def __getitem__(self, index):
+    return self.values[index], self.labels[index]
+
+
+# DEPRECATED
+"""
 class minkDataset(Dataset): # DEPRECATED
 
     def __init__(self, mode_='train', root_dir = 'my_dataset_dir', features=None, labels=None, normalize=False, binary = False, add_range_=False, voxel_size_=0.05):
@@ -471,6 +389,7 @@ class vis_minkDataset(Dataset): # DEPRECATED, USE MinkeDataset instead and appen
 
         return self.coords.astype(np.float32) / self.voxel_size, features.astype(np.float32), labels.astype(np.int32)
 
+
 class vis_Test_Dataset(Dataset): # DEPRECATED, USE PLYDataset instead and append specific clouds to the dataset property
     def __init__(self, root_dir = 'my_dataset_dir', common_clouds_dir='', extend_clouds=[], features=None, labels=None, normalize=False, binary = False, add_range_=False, compute_weights=False):
         super().__init__()
@@ -571,19 +490,8 @@ class vis_Test_Dataset(Dataset): # DEPRECATED, USE PLYDataset instead and append
 
         return features, labels, os.path.basename(path_to_file).split('.')[0]
 
+"""
 
-class RandDataset(Dataset):
-  def __init__(self, n_clouds=50, n_points=3000, n_features=3):
-    super(RandDataset, self).__init__()
-    # do stuff here?
-    self.values = np.random.rand(n_clouds, n_points, n_features)
-    self.labels = np.random.rand(n_clouds, n_points)
-
-  def __len__(self):
-    return len(self.values)  # number of samples in the dataset
-
-  def __getitem__(self, index):
-    return self.values[index], self.labels[index]
 
 
 if __name__ == '__main__':
@@ -598,16 +506,7 @@ if __name__ == '__main__':
     FEATURES = [0, 1, 2]
     LABELS = [3]
 
-
-    dataset_v1 = PLYDataset(root_dir=ROOT_DIR,
-                            features=FEATURES,
-                            labels=LABELS,
-                            normalize=NORMALIZANDO,
-                            binary=BINARY,
-                            add_range_=ADD_RANGE,
-                            compute_weights=False)
-
-    dataset_v2 = PLYDataset_V2(_mode='train',
+    dataset = PLYDataset(_mode='train',
                             _root_dir=ROOT_DIR,
                             _coord_idx=COORDENADAS,
                             _feat_idx=FEATURES,
@@ -619,14 +518,7 @@ if __name__ == '__main__':
                             
 
 
-    loader_v1 = torch.utils.data.DataLoader(dataset=dataset_v1,
-                                               batch_size=1,
-                                               shuffle=False,
-                                               num_workers=1,
-                                               pin_memory=True,
-                                               drop_last=True)
-    
-    loader_v2 = torch.utils.data.DataLoader(dataset=dataset_v2,
+    loader_v1 = torch.utils.data.DataLoader(dataset=dataset,
                                                batch_size=1,
                                                shuffle=False,
                                                num_workers=1,
@@ -634,24 +526,6 @@ if __name__ == '__main__':
                                                drop_last=True)
     
     for i in range(5):
-        data_v1 = loader_v1.dataset[i]
-        data_v2 = loader_v2.dataset[i]
-
-        # PATHS
-        # print(dataset_v1.dataset[i])
-        # print(dataset_v2.dataset[i])
-
-        # COORDS
-        print(data_v1[0][0])
-        print(data_v2[1][0])
-        
-        # FEATURES
-        # print(data_v1[1][0])
-        # print(data_v2[1][0])
-
-        # LABELS
-        # print(data_v1[2][0])
-        # print(data_v2[2][0])
 
         print('-'*10)
 
