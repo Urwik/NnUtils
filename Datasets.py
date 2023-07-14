@@ -85,6 +85,7 @@ class PLYDataset(Dataset):
         self.coords = []
         self.features = []
         self.labels = []
+        self.dataset_size = 0
 
         self.dataset = []
         for file in os.listdir(self.root_dir):
@@ -128,7 +129,10 @@ class PLYDataset(Dataset):
             self.weights = np.mean(self.weights, axis=0).astype(np.float32)
 
     def __len__(self):
-        return len(self.dataset)
+        if self.dataset_size > 0:
+            return self.dataset_size
+        else:
+            return len(self.dataset)
 
     def __getitem__(self, index):
         file = self.dataset[index]

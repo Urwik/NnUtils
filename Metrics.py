@@ -43,7 +43,7 @@ def validation_metrics(_label, _pred):
     fn_list = []
     tp_list = []
 
-    if pred.ndim > 2:
+    if pred.shape[0] > 1:
         batch_size = np.size(pred, 0)
         for i in range(batch_size):
 
