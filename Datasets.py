@@ -194,6 +194,7 @@ class MinkDataset(Dataset):
         self.coords = []
         self.features = []
         self.labels = []
+        self.dataset_size = 0
 
         self.dataset = []
         for file in os.listdir(self.root_dir):
@@ -201,7 +202,10 @@ class MinkDataset(Dataset):
                 self.dataset.append(file)
 
     def __len__(self):
-        return len(self.dataset)
+        if self.dataset_size > 0:
+            return self.dataset_size
+        else:
+            return len(self.dataset)
 
     def __getitem__(self, index):
         file = self.dataset[index]
@@ -234,9 +238,9 @@ class MinkDataset(Dataset):
             self.labels[self.labels > 0] = 1
 
         if self.mode == 'test_no_labels':
-            return self.coords.astype(np.float32) / self.voxel_size, self.features.astype(np.float32)
+            return (self.coords.astype(np.float32) / self.voxel_size), self.features.astype(np.float32), str("No_label")
         else:
-            return self.coords.astype(np.float32) / self.voxel_size, self.features.astype(np.float32), self.labels.astype(np.int32)
+            return (self.coords.astype(np.float32) / self.voxel_size), self.features.astype(np.float32), self.labels.astype(np.int32)
 
 
 class RandDataset(Dataset):
