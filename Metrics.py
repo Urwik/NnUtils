@@ -43,7 +43,7 @@ def validation_metrics(_label, _pred):
     fn_list = []
     tp_list = []
 
-    if pred.shape[0] > 1:
+    if pred.ndim == 2:
         batch_size = np.size(pred, 0)
         for i in range(batch_size):
 
@@ -69,11 +69,14 @@ def validation_metrics(_label, _pred):
         avg_fn = np.mean(np.array(fn_list))
         avg_tp = np.mean(np.array(tp_list))
 
-    else:
+    elif pred.ndim == 1:
         avg_f1_score = metrics.f1_score(label, pred, average='binary')
         avg_precision = metrics.precision_score(label, pred, average='binary')
         avg_recall = metrics.recall_score(label, pred, average='binary')
         avg_tn, avg_fp, avg_fn, avg_tp = metrics.confusion_matrix(label, pred, labels=[0, 1]).ravel()   
+    
+    else:
+        raise ValueError('Wrong dimensions for prediction array')
 
 
     return trshld, pred, avg_f1_score, avg_precision, avg_recall, (avg_tn, avg_fp, avg_fn, avg_tp)
