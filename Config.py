@@ -36,6 +36,7 @@ class train:
         self.device: torch.device
         self.optimizer: str
         self.loss_fn: torch.nn.Module
+        self.lr_scheduler: torch.optim.lr_scheduler
 
         self.threshold_method: str
         self.termination_criteria: str
@@ -109,6 +110,7 @@ class Config():
         self.train.set_device(self.config["train"]["DEVICE"].__str__())
         self.train.optimizer =  self.config["train"]["OPTIMIZER"]
         self.set_loss_fn( self.config["train"]["LOSS_FN"].__str__() )
+        self.train.lr_scheduler = self.config["train"]["LR_SCHEDULER"]
 
         self.train.threshold_method =   self.config["train"]["THRESHOLD_METHOD"]
         self.train.termination_criteria = self.config["train"]["TERMINATION_CRITERIA"]
@@ -146,5 +148,14 @@ class Config():
         elif _loss_fn == 'bceloss':
             self.train.loss_fn = torch.nn.BCELoss()
     
+    def set_lr_scheduler(self, _scheduler):
+        if _scheduler == "step":
+            self.train.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.train.optimizer, step_size=30, gamma=0.1)
+        elif _scheduler == "plateau":
+            self.train.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.train.optimizer, mode='min', factor=0.1, patience=10, threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08, verbose=False)
+        else:   
+            self.train.lr_scheduler = None
+
+
 
                 

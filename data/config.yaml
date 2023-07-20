@@ -31,6 +31,7 @@ train:
   DEVICE: cuda:1 # cuda:X, cpu
   OPTIMIZER: adam # adam, sgd
   LOSS_FN: bceloss # celoss, bceloss  
+  LR_SCHEDULER: step # step, plateau
 
   THRESHOLD_METHOD: pr # roc, pr, tuning
   TERMINATION_CRITERIA: loss # loss, precision, f1_score
