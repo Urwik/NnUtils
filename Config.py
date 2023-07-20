@@ -148,13 +148,13 @@ class Config():
         elif _loss_fn == 'bceloss':
             self.train.loss_fn = torch.nn.BCELoss()
     
-    def set_lr_scheduler(self, _scheduler):
-        if _scheduler == "step":
-            self.train.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.train.optimizer, step_size=30, gamma=0.1)
-        elif _scheduler == "plateau":
-            self.train.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.train.optimizer, mode='min', factor=0.1, patience=10, threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08, verbose=False)
-        else:   
-            self.train.lr_scheduler = None
+    # def set_lr_scheduler(self, _scheduler):
+    #     if _scheduler == "step":
+    #         self.train.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.train.optimizer, step_size=30, gamma=0.1)
+    #     elif _scheduler == "plateau":
+    #         self.train.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.train.optimizer, mode='min', factor=0.1, patience=10, threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08, verbose=False)
+    #     else:   
+    #         self.train.lr_scheduler = None
 
 
 
