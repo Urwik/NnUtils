@@ -1,6 +1,15 @@
 import numpy as np
 from sklearn import metrics
 
+class bcolors:
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    ORANGE = '\033[93m'
+    RED = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 
 def compute_best_threshold(_pred, _gt, _method = "pr"):
     trshld_per_cloud = []
