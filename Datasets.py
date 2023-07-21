@@ -261,54 +261,6 @@ class RandDataset(Dataset):
 """
 class minkDataset(Dataset): # DEPRECATED
 
-        super().__init__()
-        self.root_dir = root_dir
-        self.add_range = add_range_
-        self.coords = []
-        self.voxel_size = voxel_size_
-        self.mode = mode_
-
-        if features is None:
-            self.features = [0, 1, 2]
-        else:
-            self.features = features
-
-        if labels is None:
-            self.labels = [-1]
-        else:
-            self.labels = labels
-
-        self.normalize = normalize
-        self.binary = binary
-
-        self.dataset = []
-        for file in os.listdir(self.root_dir):
-            if file.endswith(".ply"):
-                self.dataset.append(file)
-
-    def __len__(self):
-        return len(self.dataset)
-
-    def __getitem__(self, index):
-        file = self.dataset[index]
-        path_to_file = os.path.join(self.root_dir, file)
-        ply = PlyData.read(path_to_file)
-        data = ply["vertex"].data
-        # nm.memmap to np.ndarray
-        data = np.array(list(map(list, data)))
-
-        features = data[:, self.features].copy()
-        # self.coords = features[:, [0,1,2]]
-        self.coords = data[:, [0,1,2]].copy()
-
-        if self.mode == 'test_no_labels':
-            return self.coords.astype(np.float32) / self.voxel_size, self.features.astype(np.float32)
-        else:
-            return self.coords.astype(np.float32) / self.voxel_size, self.features.astype(np.float32), self.labels.astype(np.int32)
-
-
-class minkDataset(Dataset): # DEPRECATED
-
     def __init__(self, mode_='train', root_dir = 'my_dataset_dir', features=None, labels=None, normalize=False, binary = False, add_range_=False, voxel_size_=0.05):
         super().__init__()
         self.root_dir = root_dir
@@ -380,6 +332,7 @@ class minkDataset(Dataset): # DEPRECATED
 
 class vis_minkDataset(Dataset): # DEPRECATED, USE MinkeDataset instead and append specific clouds to the dataset property
 
+    def __init__(self, root_dir = 'my_dataset_dir',  common_clouds_dir='', extend_clouds=[], features=None, labels=None, normalize=False, binary = False, add_range_=False, voxel_size_=0.05):
         super().__init__()
         self.root_dir = root_dir
         self.add_range = add_range_

@@ -2,15 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-<<<<<<< HEAD
 def plotModelCurves(_model_path = ''):
 
     ROOT_DIR = os.path.abspath(_model_path)
-=======
-def plotCurves(path):
-
-    ROOT_DIR = os.path.abspath(path)
->>>>>>> 87edf33 (Plot bar graphics for precision recall and f1)
 
     # LOAD RESULTS
     train_loss = np.load(ROOT_DIR + f'/train_loss.npy')
@@ -50,29 +44,6 @@ def plotCurves(path):
     plt.show()
 
 
-<<<<<<< HEAD
-=======
-def plotPRCurve(model_path_):
-
-    precision = np.load(model_path_ + f'/pr_precision.npy')
-    recall = np.load(model_path_ + f'/pr_recall.npy')
-    threshold = np.load(model_path_ + f'/pr_threshold.npy')
-
-    plt.figure()
-    plt.subplot(211)
-    plt.title('Precision-Recall Curve')
-    plt.plot(recall, precision, color='red')
-    plt.plot(threshold, color='green')
-    plt.xticks(np.arange(0, 1, 0.1))
-    plt.xlim([0, 1])
-
-    plt.yticks(np.arange(0, 1, 0.1))
-    plt.ylim([0, 1])
-
-    plt.show()
-
-
->>>>>>> 87edf33 (Plot bar graphics for precision recall and f1)
 if __name__ == '__main__':
     pass
 
