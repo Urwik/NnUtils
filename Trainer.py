@@ -24,20 +24,21 @@ warnings.filterwarnings('ignore')
 # IMPORTS PATH TO THE PROJECT
 current_model_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 pycharm_projects_path = os.path.dirname(os.path.dirname(current_model_path))
-minkowsky_project_path = os.path.abspath('/home/arvc/Fran/PycharmProjects/MinkowskiEngine')
 
 # IMPORTS PATH TO OTHER PYCHARM PROJECTS
 sys.path.append(current_model_path)
 sys.path.append(pycharm_projects_path)
-sys.path.append(minkowsky_project_path)
 
-from arvc_Utils.Datasets import MinkDataset
-from arvc_Utils.Metrics import validation_metrics
-from arvc_Utils.Config import Config as cfg
-from model.minkunet import MinkUNet34C
+from NnUtils import Datasets
+from NnUtils.Metrics import validation_metrics
+from NnUtils.Config import Config as cfg
 
-# ----------------------------------------------------------------------------------- #
+from NnUtils import Utils
+from NnUtils.Utils import bcolors
+# ---------------------------------º--------------------------------------------------- #
 
+
+Utils.add_sys_path('/home/arvc/Fran/PycharmProjects/MinkowskiEngine')
 
 class Trainer():
 
@@ -59,6 +60,8 @@ class Trainer():
 
 
     def setup(self):
+        """General setup of the trainer. This method is called in the constructor.
+        """
         self.make_outputdir()
         self.save_config_file()
         self.instantiate_dataset()
@@ -70,6 +73,8 @@ class Trainer():
 
 
     def make_outputdir(self):
+        """This creates the output directory for the model with the current date and time.
+        """
         OUT_DIR = os.path.join(current_model_path, self.configuration.train.output_dir.__str__())
 
         folder_name = datetime.today().strftime('%y%m%d%H%M%S')
@@ -82,11 +87,17 @@ class Trainer():
 
 
     def save_config_file(self):
+        """This saves the configuration file in the output directory.
+        """
         shutil.copyfile(self.configuration.config_path, os.path.join(self.output_dir, 'config.yaml'))
 
 
     def prefix_path(self):
+        """Gets actual hostname and sets the prefix path for the datasets.
 
+        Returns:
+            str: Prefix path for the datasets.
+        """
         machine_name = socket.gethostname()
         prefix_path = ''
         if machine_name == 'arvc-fran':
@@ -97,33 +108,37 @@ class Trainer():
         return prefix_path
 
 
-    def instantiate_dataset(self):
-
+    def instantiate_dataset(self, crop_size=0):
+        """Instantiates the dataset and the dataloader.
+        """
         self.train_abs_path = os.path.join(self.prefix_path(), self.configuration.train.train_dir.__str__())
         self.valid_abs_path = os.path.join(self.prefix_path(), self.configuration.train.valid_dir.__str__())
         
-        self.train_dataset = MinkDataset(   _mode='train',
-                                            _root_dir= self.train_abs_path,
-                                            _coord_idx= self.configuration.train.coord_idx,
-                                            _feat_idx=self.configuration.train.feat_idx, 
-                                            _label_idx=self.configuration.train.label_idx,
-                                            _normalize=self.configuration.train.normalize,
-                                            _binary=self.configuration.train.binary, 
-                                            _add_range=self.configuration.train.add_range,   
-                                            _voxel_size=self.configuration.train.voxel_size)
+        self.train_dataset = Datasets.MinkDataset(  _mode='train',
+                                                    _root_dir= self.train_abs_path,
+                                                    _coord_idx= self.configuration.train.coord_idx,
+                                                    _feat_idx=self.configuration.train.feat_idx,
+                                                    _feat_ones=self.configuration.train.feat_ones, 
+                                                    _label_idx=self.configuration.train.label_idx,
+                                                    _normalize=self.configuration.train.normalize,
+                                                    _binary=self.configuration.train.binary, 
+                                                    _add_range=self.configuration.train.add_range,   
+                                                    _voxel_size=self.configuration.train.voxel_size)
 
-        self.train_dataset.dataset_size = 50
+        if crop_size != 0:
+            self.train_dataset.dataset_size = crop_size
 
         if self.configuration.train.use_valid_data:
-            self.valid_dataset= MinkDataset(_mode='train',
-                                            _root_dir=self.valid_abs_path,
-                                            _coord_idx=self.configuration.train.coord_idx,
-                                            _feat_idx=self.configuration.train.feat_idx, 
-                                            _label_idx=self.configuration.train.label_idx,
-                                            _normalize=self.configuration.train.normalize,
-                                            _binary=self.configuration.train.binary, 
-                                            _add_range=self.configuration.train.add_range,   
-                                            _voxel_size=self.configuration.train.voxel_size)  
+            self.valid_dataset= Datasets.MinkDataset(   _mode='train',
+                                                        _root_dir=self.valid_abs_path,
+                                                        _coord_idx=self.configuration.train.coord_idx,
+                                                        _feat_idx=self.configuration.train.feat_idx, 
+                                                        _feat_ones=self.configuration.train.feat_ones,
+                                                        _label_idx=self.configuration.train.label_idx,
+                                                        _normalize=self.configuration.train.normalize,
+                                                        _binary=self.configuration.train.binary, 
+                                                        _add_range=self.configuration.train.add_range,   
+                                                        _voxel_size=self.configuration.train.voxel_size)  
         else:
             train_size = math.floor(len(self.train_dataset) * self.configuration.train.train_split)
             val_size = len(self.train_dataset) - train_size
@@ -131,7 +146,8 @@ class Trainer():
 
 
     def instantiate_dataloader(self):
-        # INSTANCE DATALOADERS
+        """Instantiates the dataloader.
+        """
         self.train_dataloader = DataLoader(self.train_dataset, batch_size=self.configuration.train.batch_size, num_workers=10,
                                       shuffle=True, pin_memory=True, drop_last=True, collate_fn=ME.utils.batch_sparse_collate)
         self.valid_dataloader = DataLoader(self.valid_dataset, batch_size=self.configuration.train.batch_size, num_workers=10,
@@ -139,6 +155,8 @@ class Trainer():
 
 
     def set_device(self):
+        """Sets the device to use for training and validation. If not cuda available cpu is used.
+        """
         if torch.cuda.is_available():
             self.device = torch.device(self.configuration.train.device)
         else:
@@ -146,17 +164,20 @@ class Trainer():
 
 
     def set_model(self):
+        """Sets the model to use for training and validation.
+        """
         add_len = 1 if self.configuration.train.add_range else 0
         feat_len = len(self.configuration.train.feat_idx) + add_len
+        feat_len = 1
 
         self.model = MinkUNet34C(   in_channels= feat_len, 
                                     out_channels= self.configuration.train.output_classes,
                                     D= len(self.configuration.train.coord_idx)).to(self.device)
 
-        pytorch_total_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
-        print('-' * 50)
-        print(self.model.__class__.__name__)
-        print(f"N Parameters: {pytorch_total_params}\n\n")
+        # pytorch_total_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        # print('-' * 50)
+        # print(self.model.__class__.__name__)
+        # print(f"N Parameters: {pytorch_total_params}\n\n")
 
 
     def set_optimizer(self):
@@ -192,20 +213,21 @@ class Trainer():
     
 
     def add_to_global_results(self):
-        self.global_valid_results.loss.append(self.valid_results.loss)
-        self.global_valid_results.f1.append(self.valid_results.f1)
-        self.global_valid_results.precision.append(self.valid_results.precision)
-        self.global_valid_results.recall.append(self.valid_results.recall)
-        self.global_valid_results.conf_matrix.append(self.valid_results.conf_matrix)
-        self.global_valid_results.threshold.append(self.valid_results.threshold)
+        self.global_valid_results.loss.append(self.valid_avg_loss)
+        self.global_valid_results.f1.append(self.valid_avg_f1)
+        self.global_valid_results.precision.append(self.valid_avg_precision)
+        self.global_valid_results.recall.append(self.valid_avg_recall)
+        self.global_valid_results.conf_matrix.append(self.valid_avg_cm)
+        self.global_valid_results.threshold.append(self.valid_avg_threshold)
 
 
     def compute_mean_valid_results(self):
-        self.valid_avg_loss = np.mean(self.valid_results.loss)
-        self.valid_avg_f1 = np.mean(self.valid_results.f1)
-        self.valid_avg_precision = np.mean(self.valid_results.precision)
-        self.valid_avg_recall = np.mean(self.valid_results.recall)
-        self.valid_avg_threshold = np.mean(self.valid_results.threshold)
+        self.valid_avg_loss = float(np.mean(self.valid_results.loss))
+        self.valid_avg_f1 = float(np.mean(self.valid_results.f1))
+        self.valid_avg_precision = float(np.mean(self.valid_results.precision))
+        self.valid_avg_recall = float(np.mean(self.valid_results.recall))
+        self.valid_avg_threshold = float(np.mean(self.valid_results.threshold))
+        self.valid_avg_cm = np.mean(self.valid_results.conf_matrix, axis=0)
 
 
     def termination_criteria(self):
@@ -218,7 +240,7 @@ class Trainer():
     def improved_results(self):
         # LOSS
         if self.configuration.train.termination_criteria == "loss":
-            self.last_value = np.mean(self.valid_results.loss).__float__()
+            self.last_value = self.valid_avg_loss
 
             if self.last_value < self.best_value:
                 return True
@@ -227,7 +249,7 @@ class Trainer():
 
         # PRECISION    
         elif self.configuration.train.termination_criteria == "precision":
-            self.last_value = np.mean(self.valid_results.precision).__float__()
+            self.last_value = self.valid_avg_precision
             
             if self.last_value > self.best_value:
                 return True
@@ -236,7 +258,7 @@ class Trainer():
 
         # F1 SCORE    
         elif self.configuration.train.termination_criteria == "f1_score":
-            self.last_value = np.mean(self.valid_results.f1).__float__()
+            self.last_value = self.valid_avg_f1
             
             if self.last_value > self.best_value:
                 return True
@@ -254,6 +276,8 @@ class Trainer():
             torch.save(self.model.state_dict(), self.output_dir + f'/best_model.pth')
             self.best_value = self.last_value
             self.epoch_timeout_count = 0
+            print('-'*50)
+            print(f"{bcolors.GREEN} NEW MODEL SAVED {bcolors.ENDC} WITH PRECISION: {bcolors.GREEN}{self.valid_avg_precision:.4f}{bcolors.ENDC}")
             return True
         else:
             self.epoch_timeout_count += 1
@@ -295,7 +319,7 @@ class Trainer():
             # Print training progress
             current_clouds += features.size(0)
             if batch % 1 == 0 or features.size(0) < self.train_dataloader.batch_size:  # print every (% X) batches
-                print(f' - [Batch: {batch + 1 }/{ len(self.train_dataloader.dataset) / self.train_dataloader.batch_size}],'
+                print(f' - [Batch: {batch + 1 }/{ int(len(self.train_dataloader.dataset) / self.train_dataloader.batch_size)}],'
                     f' / Train Loss: {avg_train_loss_:.4f}')
 
 
@@ -333,6 +357,8 @@ class Trainer():
                 # Compute metrics
                 trshld, pred_fix, avg_f1, avg_pre, avg_rec, conf_m = validation_metrics(label, prediction)
 
+                print(f'Threshold: {trshld:.5f}')
+
                 self.valid_results.threshold.append(trshld)
                 self.valid_results.f1.append(avg_f1)
                 self.valid_results.precision.append(avg_pre)
@@ -342,15 +368,15 @@ class Trainer():
 
                 current_clouds += features.size(0)
 
-                if batch % 10 == 0 or features.size()[0] < self.valid_dataloader.batch_size:  # print every 10 batches
-                    print(f'[Batch: {current_clouds}/{len(self.valid_dataloader.dataset)}]'
-                        f'  [Avg Loss: {avg_loss:.4f}]'
-                        f'  [Avg F1 score: {avg_f1:.4f}]'
-                        f'  [Avg Precision score: {avg_pre:.4f}]'
-                        f'  [Avg Recall score: {avg_rec:.4f}]')
+                if batch % 1 == 0 or features.size()[0] < self.valid_dataloader.batch_size:  # print every 10 batches
+                    print(f'[Batch: {batch +1 }/{ int(len(self.valid_dataloader.dataset) / self.valid_dataloader.batch_size)}]'
+                        f'  [Precision: {avg_pre:.4f}]'
+                        f'  [Loss: {avg_loss:.4f}]'
+                        f'  [F1: {avg_f1:.4f}]'
+                        f'  [Recall: {avg_rec:.4f}]')
 
-        self.add_to_global_results()
         self.compute_mean_valid_results()
+        self.add_to_global_results()
 
     def get_learning_rate(self):
         for param_group in self.optimizer.param_groups:
@@ -396,7 +422,7 @@ def get_config(_config_file):
 if __name__ == '__main__':
 
     # Files = os.listdir(os.path.join(current_model_path, 'config'))
-    Files = ['config_new_version.yaml']
+    Files = ['config_0.yaml']
     for configFile in Files:
         training_start_time = datetime.now()
 
@@ -414,7 +440,7 @@ if __name__ == '__main__':
 
         for epoch in range(config.train.epochs):
             print()
-            print(f"EPOCH: {epoch} | LR: {trainer.optimizer.param_groups[0]['lr']} {'-' * 30}") 
+            print(f"{bcolors.GREEN} EPOCH: {epoch} {bcolors.ENDC}| LR: {trainer.optimizer.param_groups[0]['lr']} {'-' * 30}") 
             epoch_start_time = datetime.now()
 
             trainer.train() 
@@ -426,12 +452,10 @@ if __name__ == '__main__':
 
             trainer.update_learning_rate()
 
-            print('-'*50 + '\n' + 'DURATION:' + '\n' + '-'*50)
             epoch_end_time = datetime.now()
-            print('Epoch Duration: {}'.format(epoch_end_time-epoch_start_time))
+            print('-'*50); print(f'EPOCH DURATION: {bcolors.ORANGE} {epoch_end_time-epoch_start_time}{bcolors.ENDC}'); print('-'*50); print('\n')
 
 
         trainer.save_global_results()
-        training_end_time = datetime.now()
-        print('Total Training Duration: {}'.format(training_end_time-training_start_time))
-        print("Training Done!")
+        print('\n'); print('-'*50);print(f'{bcolors.GREEN}TRAINING DONE!{bcolors.ENDC}') 
+        print(f'TOTAL TRAINING DURATION: {bcolors.ORANGE} {datetime.now()-training_start_time}{bcolors.ENDC}'); print('-'*50); print('\n')

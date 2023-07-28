@@ -44,6 +44,23 @@ def plotModelCurves(_model_path = ''):
     plt.show()
 
 
+def plotPrecision(model_path):
+    ROOT_DIR = os.path.abspath(model_path)
+    precision = np.load(model_path)
+    plt.figure()
+    plt.title('Precision')
+    plt.plot(np.linspace(0, precision.size, precision.size), precision, 'b', label='precision')
+    plt.legend()
+    plt.yticks(np.arange(0, 1, 0.1))
+    plt.ylim([0, 1])
+    plt.show()
+
+
+def showLastValue(model_path):
+    value = np.load(model_path)
+    print(value[-1])
+
+
 if __name__ == '__main__':
     pass
 

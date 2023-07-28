@@ -175,6 +175,7 @@ class MinkDataset(Dataset):
                  _root_dir='my_dataset_dir',
                  _coord_idx=None,
                  _feat_idx=None,
+                 _feat_ones=False,
                  _label_idx=None,
                  _normalize=False,
                  _binary=False,
@@ -193,6 +194,7 @@ class MinkDataset(Dataset):
         self.binary = _binary
         self.coords = []
         self.features = []
+        self.feat_ones = _feat_ones
         self.labels = []
         self.dataset_size = 0
 
@@ -237,10 +239,17 @@ class MinkDataset(Dataset):
         if self.binary:
             self.labels[self.labels > 0] = 1
 
+        if self.feat_ones:
+            self.features = np.ones((self.features.shape[0], 1)) # esto son unos
+
+
         if self.mode == 'test_no_labels':
             return (self.coords.astype(np.float32) / self.voxel_size), self.features.astype(np.float32), str("No_label")
+        if self.mode == 'test':
+            return (self.coords.astype(np.float32) / self.voxel_size), self.features.astype(np.float32), self.labels.astype(np.int32)
         else:
             return (self.coords.astype(np.float32) / self.voxel_size), self.features.astype(np.float32), self.labels.astype(np.int32)
+
 
 
 class RandDataset(Dataset):

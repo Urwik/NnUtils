@@ -27,6 +27,7 @@ class train:
         self.voxel_size: float
 
         # DATA STUFF
+        self.feat_ones: bool
         self.normalize: bool
         self.binary: bool
         self.add_range: bool
@@ -101,6 +102,7 @@ class Config():
         self.train.voxel_size = self.config["train"]["VOXEL_SIZE"]
 
         # DATA STUFF
+        self.train.feat_ones =  self.config["train"]["FEAT_ONES"]
         self.train.normalize =  self.config["train"]["NORMALIZE"]
         self.train.binary =     self.config["train"]["BINARY"]
         self.train.add_range =  self.config["train"]["ADD_RANGE"]

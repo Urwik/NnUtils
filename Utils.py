@@ -11,6 +11,22 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
+
+def add_sys_path(path):
+    import sys
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
+
+
+def add_current_path():
+    import os
+    import sys
+    current_path = os.path.dirname(os.path.realpath(__file__))
+    if current_path not in sys.path:
+        sys.path.insert(0, current_path)
+
+
 def compute_best_threshold(_pred, _gt, _method = "pr"):
     trshld_per_cloud = []
 

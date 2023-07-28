@@ -22,6 +22,7 @@ train:
   VOXEL_SIZE: 0.05
   
   # DATA STUFF
+  FEAT_ONES: True
   NORMALIZE: True
   BINARY: True
   ADD_RANGE: False
